@@ -1,1 +1,3 @@
-org.apache.xerces.jaxp.DocumentBuilderFactoryImpl
+<!-- Removed the provided implementation for DocumentBuilderFactory 
+    and replaced it with the one provided by alfresco-xmlfactory -->
+<!-- org.apache.xerces.jaxp.DocumentBuilderFactoryImpl -->

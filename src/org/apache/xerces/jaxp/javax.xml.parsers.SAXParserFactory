@@ -1,1 +1,3 @@
-org.apache.xerces.jaxp.SAXParserFactoryImpl
+<!-- Removed the provided implementation for SAXParserFactory 
+    and replaced it with the one provided by alfresco-xmlfactory -->
+<!-- org.apache.xerces.jaxp.SAXParserFactoryImpl -->
