@@ -152,7 +152,12 @@ public class DOMNormalizer implements XMLDocumentHandler {
     /**
      * If the user stops the process, this exception will be thrown.
      */
-    public static final RuntimeException abort = new RuntimeException();
+    public static final RuntimeException abort = new RuntimeException() {
+        private static final long serialVersionUID = 5361322877988412432L;
+        public Throwable fillInStackTrace() {
+            return this;
+        }
+    };
     
     /** Empty string to pass to the validator. **/
     public static final XMLString EMPTY_STRING = new XMLString();
@@ -345,13 +350,21 @@ public class DOMNormalizer implements XMLDocumentHandler {
                     // remove default attributes
                     namespaceFixUp(elem, attributes);
                     
-                    if ((fConfiguration.features & DOMConfigurationImpl.NSDECL) == 0 && attributes != null ) {
-                        for (int i = 0; i < attributes.getLength(); ++i) {
-                            Attr att = (Attr)attributes.getItem(i);
-                            if (XMLSymbols.PREFIX_XMLNS.equals(att.getPrefix()) ||
-                                XMLSymbols.PREFIX_XMLNS.equals(att.getName())) {
-                                elem.removeAttributeNode(att);
-                                --i;
+                    if ((fConfiguration.features & DOMConfigurationImpl.NSDECL) == 0) {
+                        // Namespace declarations may have been added by namespace fix-up. Need
+                        // to fetch the AttributeMap again if it contained no attributes prior
+                        // to namespace fix-up.
+                        if (attributes == null) {
+                            attributes = (elem.hasAttributes()) ? (AttributeMap) elem.getAttributes() : null;
+                        }
+                        if (attributes != null) {
+                            for (int i = 0; i < attributes.getLength(); ++i) {
+                                Attr att = (Attr)attributes.getItem(i);
+                                if (XMLSymbols.PREFIX_XMLNS.equals(att.getPrefix()) ||
+                                        XMLSymbols.PREFIX_XMLNS.equals(att.getName())) {
+                                    elem.removeAttributeNode(att);
+                                    --i;
+                                }
                             }
                         }
                     }  

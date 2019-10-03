@@ -365,10 +365,10 @@ final class ObjectFactory {
         throws ClassNotFoundException, ConfigurationError
     {
         //throw security exception if the calling thread is not allowed to access the package
-        //restrict the access to package as speicified in java.security policy
+        //restrict the access to package as specified in java.security policy
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            final int lastDot = className.lastIndexOf(".");
+            final int lastDot = className.lastIndexOf('.');
             String packageName = className;
             if (lastDot != -1) packageName = className.substring(0, lastDot);
             security.checkPackageAccess(packageName);

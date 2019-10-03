@@ -630,8 +630,10 @@ public class XMLDTDScannerImpl
      *
      * @param name The name of the parameter entity to start (without the '%')
      * @param literal Whether this is happening within a literal
+     * 
+     * @return The name of the parameter entity (with the '%')
      */
-    protected void startPE(String name, boolean literal) 
+    protected String startPE(String name, boolean literal) 
         throws IOException, XNIException {
         int depth = fPEDepth;
         String pName = "%"+name;
@@ -650,6 +652,7 @@ public class XMLDTDScannerImpl
         if (depth != fPEDepth && fEntityScanner.isExternal()) {
             scanTextDecl();
         }
+        return pName;
     }
 
     /** 
@@ -1511,9 +1514,11 @@ public class XMLDTDScannerImpl
             }
         }
 
+        // count of direct and indirect references to parameter entities in the value of the entity.
+        int paramEntityRefs = 0;
         // internal entity
         if (systemId == null) {
-            scanEntityValue(fLiteral, fLiteral2);
+            paramEntityRefs = scanEntityValue(fLiteral, fLiteral2);
             // since we need it's value anyway, let's snag it so it doesn't get corrupted 
             // if a new load takes place before we store the entity values
             fStringBuffer.clear();
@@ -1556,7 +1561,7 @@ public class XMLDTDScannerImpl
             }
         }
         else {
-            fEntityManager.addInternalEntity(name, fStringBuffer.toString());
+            fEntityManager.addInternalEntity(name, fStringBuffer.toString(), paramEntityRefs);
             if (fDTDHandler != null) {
                 fDTDHandler.internalEntityDecl(name, fStringBuffer, fStringBuffer2, null); 
             }
@@ -1566,18 +1571,20 @@ public class XMLDTDScannerImpl
     } // scanEntityDecl()
 
     /**
-     * Scans an entity value.
+     * <p>Scans an entity value.</p>
+     * 
+     * <p><strong>Note:</strong> This method uses fString, fStringBuffer (through
+     * the use of scanCharReferenceValue), and fStringBuffer2, anything in them
+     * at the time of calling is lost.</p>
      *
      * @param value The string to fill in with the value.
      * @param nonNormalizedValue The string to fill in with the 
      *                           non-normalized value.
-     *
-     * <strong>Note:</strong> This method uses fString, fStringBuffer (through
-     * the use of scanCharReferenceValue), and fStringBuffer2, anything in them
-     * at the time of calling is lost.
+     *                           
+     * @return Count of direct and indirect references to parameter entities in the value of the entity.              
      */
-    protected final void scanEntityValue(XMLString value, 
-                                         XMLString nonNormalizedValue)
+    protected final int scanEntityValue(XMLString value, 
+                                        XMLString nonNormalizedValue)
         throws IOException, XNIException
     {
         int quote = fEntityScanner.scanChar();
@@ -1586,6 +1593,8 @@ public class XMLDTDScannerImpl
         }
         // store at which depth of entities we start
         int entityDepth = fEntityDepth;
+        // count of direct and indirect references to parameter entities in the value of the entity.
+        int paramEntityRefs = 0;
 
         XMLString literal = fString;
         XMLString literal2 = fString;
@@ -1642,7 +1651,8 @@ public class XMLDTDScannerImpl
                             fStringBuffer2.append(peName);
                             fStringBuffer2.append(';');
                         }
-                        startPE(peName, true);
+                        final String pNameWithPct = startPE(peName, true);
+                        paramEntityRefs += (fEntityManager.getParamEntityRefCount(pNameWithPct) + 1);
                         // REVISIT: [Q] Why do we skip spaces here? -Ac
                         // REVISIT: This will make returning the non-
                         //          normalized value harder. -Ac
@@ -1681,7 +1691,8 @@ public class XMLDTDScannerImpl
         if (!fEntityScanner.skipChar(quote)) {
             reportFatalError("CloseQuoteMissingInDecl", null);
         }
-    } // scanEntityValue(XMLString,XMLString):void
+        return paramEntityRefs;
+    } // scanEntityValue(XMLString,XMLString):int
 
     /**
      * Scans a notation declaration

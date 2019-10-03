@@ -473,12 +473,13 @@ public class XMLEntityManager
      *
      * @param name The name of the entity.
      * @param text The text of the entity.
+     * @param paramEntityRefs Count of direct and indirect references to parameter entities in the value of the entity.
      *
      * @see SymbolTable
      */
-    public void addInternalEntity(String name, String text) {
+    public void addInternalEntity(String name, String text, int paramEntityRefs) {
         if (!fEntities.containsKey(name)) {
-            Entity entity = new InternalEntity(name, text, fInExternalSubset);
+            Entity entity = new InternalEntity(name, text, fInExternalSubset, paramEntityRefs);
             fEntities.put(name, entity);
         }
         else{
@@ -490,8 +491,46 @@ public class XMLEntityManager
             }
         }
 
+    } // addInternalEntity(String,String,int)    
+    
+    /**
+     * Adds an internal entity declaration.
+     * <p>
+     * <strong>Note:</strong> This method ignores subsequent entity
+     * declarations.
+     * <p>
+     * <strong>Note:</strong> The name should be a unique symbol. The
+     * SymbolTable can be used for this purpose.
+     *
+     * @param name The name of the entity.
+     * @param text The text of the entity.
+     *
+     * @see SymbolTable
+     */
+    public void addInternalEntity(String name, String text) {
+        addInternalEntity(name, text, 0);
     } // addInternalEntity(String,String)
-
+    
+    /**
+     * Returns the number of direct and indirect references to parameter 
+     * entities in the value of the entity. This value will only be
+     * non-zero for an internal parameter entity.
+     * 
+     * @param entityName The name of the entity to check.
+     * @return Count of direct and indirect references to parameter entities in the value of the entity
+     */
+    public int getParamEntityRefCount(String entityName) {
+        if (entityName != null && 
+            entityName.length() > 0 && 
+            entityName.charAt(0) == '%') {
+            final Entity entity = (Entity) fEntities.get(entityName);
+            if (entity != null && !entity.isExternal()) {
+                return ((InternalEntity) entity).paramEntityRefs;
+            }
+        }
+        return 0;
+    } // getParamEntityRefCount(String)
+    
     /**
      * Adds an external entity declaration.
      * <p>
@@ -901,20 +940,23 @@ public class XMLEntityManager
 
         String encoding = setupCurrentEntity(name, xmlInputSource, literal, isExternal);
 
-        //when entity expansion limit is set by the Application, we need to
-        //check for the entity expansion limit set by the parser, if number of entity
-        //expansions exceeds the entity expansion limit, parser will throw fatal error.
+        // when entity expansion limit is set by the Application, we need to
+        // check for the entity expansion limit set by the parser, if number of entity
+        // expansions exceeds the entity expansion limit, parser will throw fatal error.
         // Note that this is intentionally unbalanced; it counts
         // the number of expansions *per document*.
-        if( fSecurityManager != null && fEntityExpansionCount++ > fEntityExpansionLimit ){
-            fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
-                                             "EntityExpansionLimitExceeded",
-                                             new Object[]{new Integer(fEntityExpansionLimit) },
-                                             XMLErrorReporter.SEVERITY_FATAL_ERROR );
-            // is there anything better to do than reset the counter?
-            // at least one can envision debugging applications where this might
-            // be useful...
-            fEntityExpansionCount = 0;
+        if (fSecurityManager != null) {
+            fEntityExpansionCount += getParamEntityRefCount(name);
+            if (fEntityExpansionCount++ > fEntityExpansionLimit) {
+                fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
+                        "EntityExpansionLimitExceeded",
+                        new Object[]{new Integer(fEntityExpansionLimit) },
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR );
+                // is there anything better to do than reset the counter?
+                // at least one can envision debugging applications where this might
+                // be useful...
+                fEntityExpansionCount = 0;
+            }
         }
         
         // call handler
@@ -1018,26 +1060,27 @@ public class XMLEntityManager
                     b4[count] = (byte)rewindableStream.readAndBuffer();
                 }
                 if (count == 4) {
-                    EncodingInfo info = getEncodingInfo(b4, count);
-                    encoding = info.encoding;
+                    final EncodingInfo info = getEncodingInfo(b4, count);
+                    encoding = info.autoDetectedEncoding;
+                    final String readerEncoding = info.readerEncoding;
                     isBigEndian = info.isBigEndian;
                     stream.reset();
                     if (info.hasBOM) {
                         // Special case UTF-8 files with BOM created by Microsoft
                         // tools. It's more efficient to consume the BOM than make
                         // the reader perform extra checks. -Ac
-                        if (encoding == "UTF-8") {
+                        if (readerEncoding == "UTF-8") {
                             // UTF-8 BOM: 0xEF 0xBB 0xBF
                             stream.skip(3);
                         }
                         // It's also more efficient to consume the UTF-16 BOM.
-                        else if (encoding == "UTF-16") {
+                        else if (readerEncoding == "UTF-16") {
                             // UTF-16 BE BOM: 0xFE 0xFF 
                             // UTF-16 LE BOM: 0xFF 0xFE
                             stream.skip(2);
                         }
                     }
-                    reader = createReader(stream, encoding, isBigEndian);
+                    reader = createReader(stream, readerEncoding, isBigEndian);
                 }
                 else {
                     reader = createReader(stream, encoding, isBigEndian);
@@ -2472,6 +2515,9 @@ public class XMLEntityManager
 
         /** Text value of entity. */
         public String text;
+        
+        /** Count of direct and indirect references to parameter entities in the value of the entity. */
+        public int paramEntityRefs;
 
         //
         // Constructors
@@ -2487,6 +2533,12 @@ public class XMLEntityManager
             super(name,inExternalSubset);
             this.text = text;
         } // <init>(String,String)
+        
+        /** Constructs an internal entity. */
+        public InternalEntity(String name, String text, boolean inExternalSubset, int paramEntityRefs) {
+            this(name, text, inExternalSubset);
+            this.paramEntityRefs = paramEntityRefs;
+        } // <init>(String,String,int)
 
         //
         // Entity methods
@@ -2872,16 +2924,16 @@ public class XMLEntityManager
         public static final EncodingInfo UTF_8_WITH_BOM = new EncodingInfo("UTF-8", null, true);
         
         /** UTF-16, big-endian **/
-        public static final EncodingInfo UTF_16_BIG_ENDIAN = new EncodingInfo("UTF-16", Boolean.TRUE, false);
+        public static final EncodingInfo UTF_16_BIG_ENDIAN = new EncodingInfo("UTF-16BE", "UTF-16", Boolean.TRUE, false);
         
         /** UTF-16, big-endian with BOM **/
-        public static final EncodingInfo UTF_16_BIG_ENDIAN_WITH_BOM = new EncodingInfo("UTF-16", Boolean.TRUE, true);
+        public static final EncodingInfo UTF_16_BIG_ENDIAN_WITH_BOM = new EncodingInfo("UTF-16BE", "UTF-16", Boolean.TRUE, true);
         
         /** UTF-16, little-endian **/
-        public static final EncodingInfo UTF_16_LITTLE_ENDIAN = new EncodingInfo("UTF-16", Boolean.FALSE, false);
+        public static final EncodingInfo UTF_16_LITTLE_ENDIAN = new EncodingInfo("UTF-16LE", "UTF-16", Boolean.FALSE, false);
         
         /** UTF-16, little-endian with BOM **/
-        public static final EncodingInfo UTF_16_LITTLE_ENDIAN_WITH_BOM = new EncodingInfo("UTF-16", Boolean.FALSE, true);
+        public static final EncodingInfo UTF_16_LITTLE_ENDIAN_WITH_BOM = new EncodingInfo("UTF-16LE", "UTF-16", Boolean.FALSE, true);
         
         /** UCS-4, big-endian **/
         public static final EncodingInfo UCS_4_BIG_ENDIAN = new EncodingInfo("ISO-10646-UCS-4", Boolean.TRUE, false);
@@ -2895,15 +2947,21 @@ public class XMLEntityManager
         /** EBCDIC **/
         public static final EncodingInfo EBCDIC = new EncodingInfo("CP037", null, false);
         
-        public final String encoding;
+        public final String autoDetectedEncoding;
+        public final String readerEncoding;
         public final Boolean isBigEndian;
         public final boolean hasBOM;
         
-        private EncodingInfo(String encoding, Boolean isBigEndian, boolean hasBOM) {
-            this.encoding = encoding;
+        private EncodingInfo(String autoDetectedEncoding, Boolean isBigEndian, boolean hasBOM) {
+            this(autoDetectedEncoding, autoDetectedEncoding, isBigEndian, hasBOM);
+        } // <init>(String,Boolean,boolean)
+        
+        private EncodingInfo(String autoDetectedEncoding, String readerEncoding, Boolean isBigEndian, boolean hasBOM) {
+            this.autoDetectedEncoding = autoDetectedEncoding;
+            this.readerEncoding = readerEncoding;
             this.isBigEndian = isBigEndian;
             this.hasBOM = hasBOM;
-        } // <init>(String,Boolean,boolean)
+        } // <init>(String,String,Boolean,boolean)
         
     } // class EncodingInfo
     

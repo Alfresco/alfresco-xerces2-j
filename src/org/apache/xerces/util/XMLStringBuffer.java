@@ -111,12 +111,13 @@ public class XMLStringBuffer
      */
     public void append(char c) {
         if (this.length + 1 > this.ch.length) {
-                    int newLength = this.ch.length*2;
-                    if (newLength < this.ch.length + DEFAULT_SIZE)
-                        newLength = this.ch.length + DEFAULT_SIZE;
-                    char[] newch = new char[newLength];
-                    System.arraycopy(this.ch, 0, newch, 0, this.length);
-                    this.ch = newch;
+            int newLength = this.ch.length * 2;
+            if (newLength < this.ch.length + DEFAULT_SIZE) {
+                newLength = this.ch.length + DEFAULT_SIZE;
+            }
+            char[] newch = new char[newLength];
+            System.arraycopy(this.ch, 0, newch, 0, this.length);
+            this.ch = newch;
         }
         this.ch[this.length] = c;
         this.length++;
@@ -130,9 +131,10 @@ public class XMLStringBuffer
     public void append(String s) {
         int length = s.length();
         if (this.length + length > this.ch.length) {
-            int newLength = this.ch.length*2;
-            if (newLength < this.length + length + DEFAULT_SIZE)
+            int newLength = this.ch.length * 2;
+            if (newLength < this.length + length + DEFAULT_SIZE) {
                 newLength = this.ch.length + length + DEFAULT_SIZE;
+            }
             char[] newch = new char[newLength];            
             System.arraycopy(this.ch, 0, newch, 0, this.length);
             this.ch = newch;
@@ -150,7 +152,11 @@ public class XMLStringBuffer
      */
     public void append(char[] ch, int offset, int length) {
         if (this.length + length > this.ch.length) {
-            char[] newch = new char[this.ch.length + length + DEFAULT_SIZE];
+            int newLength = this.ch.length * 2;
+            if (newLength < this.length + length + DEFAULT_SIZE) {
+                newLength = this.ch.length + length + DEFAULT_SIZE;
+            }
+            char[] newch = new char[newLength];
             System.arraycopy(this.ch, 0, newch, 0, this.length);
             this.ch = newch;
         }
