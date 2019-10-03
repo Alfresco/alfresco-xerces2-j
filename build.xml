@@ -57,13 +57,15 @@ Authors:
     <property name='parser.Name' value='Xerces-J'/>
     <property name='parser.name' value='xerces-j'/>
     <property name='parser.shortname' value='xerces'/>
-    <property name='parser.Version' value='2.12.0'/>
-    <property name='parser.version' value='2.12.0'/>
-    <property name='parser_version' value='2_12_0'/>
+
+    <property name='parser.version' value='${parser.version}'/>
+    <property name='parser.Version' value='${parser.version}'/>
+    <property name='parser_version' value='${parser.version}'/>
+
 
     <property name='deprecatedjar.parser' value='xerces.jar'/>
     <property name='jar.apis' value='xml-apis.jar'/>
-    <property name='jar.parser' value='xercesImpl.jar'/>
+    <property name='jar.parser' value='xercesImpl-${parser.version}.jar'/>
     <property name='jar.samples' value='xercesSamples.jar'/>
     <property name='jar.dv' value='xercesDV.jar'/>
     <property name='jar.resolver' value='resolver.jar'/>
@@ -178,11 +180,11 @@ Authors:
     <mkdir dir="${build.dest}/META-INF"/>
     <mkdir dir="${build.dest}/META-INF/services"/>
 
-    <copy file="${src.dir}/org/apache/xerces/jaxp/javax.xml.parsers.DocumentBuilderFactory"
-      tofile="${build.dest}/META-INF/services/javax.xml.parsers.DocumentBuilderFactory"/>
+    <!--<copy file="${src.dir}/org/apache/xerces/jaxp/javax.xml.parsers.DocumentBuilderFactory"-->
+      <!--tofile="${build.dest}/META-INF/services/javax.xml.parsers.DocumentBuilderFactory"/>-->
 
-    <copy file="${src.dir}/org/apache/xerces/jaxp/javax.xml.parsers.SAXParserFactory"
-      tofile="${build.dest}/META-INF/services/javax.xml.parsers.SAXParserFactory"/>
+    <!--<copy file="${src.dir}/org/apache/xerces/jaxp/javax.xml.parsers.SAXParserFactory"-->
+      <!--tofile="${build.dest}/META-INF/services/javax.xml.parsers.SAXParserFactory"/>-->
   	
     <copy file="${src.dir}/org/apache/xerces/jaxp/datatype/javax.xml.datatype.DatatypeFactory"
       tofile="${build.dest}/META-INF/services/javax.xml.datatype.DatatypeFactory"/>

@@ -16,6 +16,7 @@
  */
 package org.apache.html.dom;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.html.HTMLObjectElement;
 
 /**
@@ -251,6 +252,11 @@ public class HTMLObjectElementImpl
         super( owner, name );
     }
 
+    @Override public Document getContentDocument()
+    {
+        // Added for Java version 1.8 compatibility
+        return null;
+    }
 
 }
 
