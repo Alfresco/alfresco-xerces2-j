@@ -23,6 +23,8 @@ overlays/
 
 .mtj
 .tmp/
+# ant
+build/
 
 # Package Files #
 
