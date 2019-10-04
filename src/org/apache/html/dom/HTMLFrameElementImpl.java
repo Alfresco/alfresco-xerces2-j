@@ -139,11 +139,5 @@ public class HTMLFrameElementImpl
         super( owner, name );
     }
 
-    @Override
-    public Document getContentDocument()
-    {
-        // Added for Java version 1.8 compatibility 
-        return null;
-    }
 }
 
