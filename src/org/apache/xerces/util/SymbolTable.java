@@ -84,12 +84,6 @@ public class SymbolTable {
 
     /** Default table size. */
     protected static final int TABLE_SIZE = 101;
-    
-    /** Maximum hash collisions per bucket for a table with load factor == 1. */
-    protected static final int MAX_HASH_COLLISIONS = 40;
-    
-    protected static final int MULTIPLIERS_SIZE = 1 << 5;
-    protected static final int MULTIPLIERS_MASK = MULTIPLIERS_SIZE - 1;
 
     //
     // Data
@@ -110,18 +104,6 @@ public class SymbolTable {
 							 
     /** The load factor for the SymbolTable. */
     protected float fLoadFactor;
-    
-    /**
-     * A new hash function is selected and the table is rehashed when
-     * the number of keys in the bucket exceeds this threshold.
-     */
-    protected final int fCollisionThreshold;
-    
-    /**
-     * Array of randomly selected hash function multipliers or <code>null</code>
-     * if the default String.hashCode() function should be used.
-     */
-    protected int[] fHashMultipliers;
 
     //
     // Constructors
@@ -154,7 +136,6 @@ public class SymbolTable {
         fTableSize = initialCapacity;
         fBuckets = new Entry[fTableSize];
         fThreshold = (int)(fTableSize * loadFactor);
-        fCollisionThreshold = (int)(MAX_HASH_COLLISIONS * loadFactor);
         fCount = 0;
     }
 
@@ -193,31 +174,18 @@ public class SymbolTable {
     public String addSymbol(String symbol) {
         
         // search for identical symbol
-        int collisionCount = 0;
         int bucket = hash(symbol) % fTableSize;
         for (Entry entry = fBuckets[bucket]; entry != null; entry = entry.next) {
             if (entry.symbol.equals(symbol)) {
                 return entry.symbol;
             }
-            ++collisionCount;
         }
-        return addSymbol0(symbol, bucket, collisionCount);
-        
-    } // addSymbol(String):String
-    
-    private String addSymbol0(String symbol, int bucket, int collisionCount) {
         
         if (fCount >= fThreshold) {
             // Rehash the table if the threshold is exceeded
             rehash();
             bucket = hash(symbol) % fTableSize;
-        }
-        else if (collisionCount >= fCollisionThreshold) {
-            // Select a new hash function and rehash the table if
-            // the collision threshold is exceeded.
-            rebalance();
-            bucket = hash(symbol) % fTableSize;
-        }
+        } 
         
         // create new entry
         Entry entry = new Entry(symbol, fBuckets[bucket]);
@@ -225,7 +193,7 @@ public class SymbolTable {
         ++fCount;
         return entry.symbol;
         
-    } // addSymbol0(String,int,int):String
+    } // addSymbol(String):String
 
     /**
      * Adds the specified symbol to the symbol table and returns a
@@ -240,37 +208,23 @@ public class SymbolTable {
     public String addSymbol(char[] buffer, int offset, int length) {
         
         // search for identical symbol
-        int collisionCount = 0;
         int bucket = hash(buffer, offset, length) % fTableSize;
         OUTER: for (Entry entry = fBuckets[bucket]; entry != null; entry = entry.next) {
             if (length == entry.characters.length) {
                 for (int i = 0; i < length; i++) {
                     if (buffer[offset + i] != entry.characters[i]) {
-                        ++collisionCount;
                         continue OUTER;
                     }
                 }
                 return entry.symbol;
             }
-            ++collisionCount;
         }
-        return addSymbol0(buffer, offset, length, bucket, collisionCount);
-        
-    } // addSymbol(char[],int,int):String
-    
-    private String addSymbol0(char[] buffer, int offset, int length, int bucket, int collisionCount) {
         
         if (fCount >= fThreshold) {
             // Rehash the table if the threshold is exceeded
             rehash();
             bucket = hash(buffer, offset, length) % fTableSize;
-        }
-        else if (collisionCount >= fCollisionThreshold) {
-            // Select a new hash function and rehash the table if
-            // the collision threshold is exceeded.
-            rebalance();
-            bucket = hash(buffer, offset, length) % fTableSize;
-        }
+        } 
         
         // add new entry
         Entry entry = new Entry(buffer, offset, length, fBuckets[bucket]);
@@ -278,7 +232,7 @@ public class SymbolTable {
         ++fCount;
         return entry.symbol;
         
-    } // addSymbol0(char[],int,int,int,int):String
+    } // addSymbol(char[],int,int):String
 
     /**
      * Returns a hashcode value for the specified symbol. The value
@@ -289,21 +243,8 @@ public class SymbolTable {
      * @param symbol The symbol to hash.
      */
     public int hash(String symbol) {
-        if (fHashMultipliers == null) {
-            return symbol.hashCode() & 0x7FFFFFFF;
-        }
-        return hash0(symbol);
+        return symbol.hashCode() & 0x7FFFFFFF;
     } // hash(String):int
-    
-    private int hash0(String symbol) {
-        int code = 0;
-        final int length = symbol.length();
-        final int[] multipliers = fHashMultipliers;
-        for (int i = 0; i < length; ++i) {
-            code = code * multipliers[i & MULTIPLIERS_MASK] + symbol.charAt(i);
-        }
-        return code & 0x7FFFFFFF;
-    } // hash0(String):int
 
     /**
      * Returns a hashcode value for the specified symbol information.
@@ -317,25 +258,14 @@ public class SymbolTable {
      * @param length The length of the symbol.
      */
     public int hash(char[] buffer, int offset, int length) {
-        if (fHashMultipliers == null) {
-            int code = 0;
-            for (int i = 0; i < length; ++i) {
-                code = code * 31 + buffer[offset + i];
-            }
-            return code & 0x7FFFFFFF;
-        }
-        return hash0(buffer, offset, length);
 
-    } // hash(char[],int,int):int
-    
-    private int hash0(char[] buffer, int offset, int length) {
         int code = 0;
-        final int[] multipliers = fHashMultipliers;
         for (int i = 0; i < length; ++i) {
-            code = code * multipliers[i & MULTIPLIERS_MASK] + buffer[offset + i];
+            code = code * 31 + buffer[offset + i];
         }
         return code & 0x7FFFFFFF;
-    } // hash0(char[],int,int):int
+
+    } // hash(char[],int,int):int
 
     /**
      * Increases the capacity of and internally reorganizes this 
@@ -345,28 +275,11 @@ public class SymbolTable {
      * and load factor. 
      */
     protected void rehash() {
-        rehashCommon(fBuckets.length * 2 + 1);
-    }
-    
-    /**
-     * Randomly selects a new hash function and reorganizes this SymbolTable
-     * in order to more evenly distribute its entries across the table. This 
-     * method is called automatically when the number keys in one of the 
-     * SymbolTable's buckets exceeds the given collision threshold.
-     */
-    protected void rebalance() {
-        if (fHashMultipliers == null) {
-            fHashMultipliers = new int[MULTIPLIERS_SIZE];
-        }
-        PrimeNumberSequenceGenerator.generateSequence(fHashMultipliers);
-        rehashCommon(fBuckets.length);
-    }
-    
-    private void rehashCommon(final int newCapacity) {
-        
+
         int oldCapacity = fBuckets.length;
         Entry[] oldTable = fBuckets;
 
+        int newCapacity = oldCapacity * 2 + 1;
         Entry[] newTable = new Entry[newCapacity];
 
         fThreshold = (int)(newCapacity * fLoadFactor);
@@ -378,7 +291,7 @@ public class SymbolTable {
                 Entry e = old;
                 old = old.next;
 
-                int index = hash(e.symbol) % newCapacity;
+                int index = hash(e.characters, 0, e.characters.length) % newCapacity;
                 e.next = newTable[index];
                 newTable[index] = e;
             }

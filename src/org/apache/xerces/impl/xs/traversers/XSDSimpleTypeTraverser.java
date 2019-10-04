@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import org.apache.xerces.impl.dv.InvalidDatatypeFacetException;
+import org.apache.xerces.impl.dv.SchemaDVFactory;
 import org.apache.xerces.impl.dv.XSSimpleType;
+import org.apache.xerces.impl.dv.xs.SchemaDVFactoryImpl;
 import org.apache.xerces.impl.dv.xs.XSSimpleTypeDecl;
 import org.apache.xerces.impl.xs.SchemaGrammar;
 import org.apache.xerces.impl.xs.SchemaSymbols;
@@ -391,7 +393,7 @@ class XSDSimpleTypeTraverser extends XSDAbstractTraverser {
         }
         // now traverse facets, if it's derived by restriction
         if (restriction && content != null) {
-            FacetInfo fi = traverseFacets(content, newDecl, baseValidator, schemaDoc);
+            FacetInfo fi = traverseFacets(content, baseValidator, schemaDoc);
             content = fi.nodeAfterFacets;
             
             try {

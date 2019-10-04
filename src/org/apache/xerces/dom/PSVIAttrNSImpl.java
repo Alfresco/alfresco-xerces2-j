@@ -23,10 +23,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.apache.xerces.impl.dv.ValidatedInfo;
-import org.apache.xerces.impl.xs.AttributePSVImpl;
 import org.apache.xerces.impl.xs.util.StringListImpl;
 import org.apache.xerces.xs.AttributePSVI;
-import org.apache.xerces.xs.ItemPSVI;
 import org.apache.xerces.xs.ShortList;
 import org.apache.xerces.xs.StringList;
 import org.apache.xerces.xs.XSAttributeDeclaration;
@@ -95,20 +93,6 @@ public class PSVIAttrNSImpl extends AttrNSImpl implements AttributePSVI {
     //
     // AttributePSVI methods
     //
-    
-    /* (non-Javadoc)
-     * @see org.apache.xerces.xs.ItemPSVI#constant()
-     */
-    public ItemPSVI constant() {
-        return new AttributePSVImpl(true, this);
-    }
-    
-    /* (non-Javadoc)
-     * @see org.apache.xerces.xs.ItemPSVI#isConstant()
-     */
-    public boolean isConstant() {
-        return false;
-    }
 
     /**
      * [schema default]

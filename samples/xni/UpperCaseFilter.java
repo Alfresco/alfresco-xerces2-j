@@ -17,8 +17,6 @@
 
 package xni;
 
-import java.util.Locale;
-
 import org.apache.xerces.xni.Augmentations;
 import org.apache.xerces.xni.QName;
 import org.apache.xerces.xni.XMLAttributes;
@@ -107,11 +105,11 @@ public class UpperCaseFilter
      */
     protected QName toUpperCase(QName qname) {
         String prefix = qname.prefix != null
-                      ? qname.prefix.toUpperCase(Locale.ENGLISH) : null;
+                      ? qname.prefix.toUpperCase() : null;
         String localpart = qname.localpart != null
-                         ? qname.localpart.toUpperCase(Locale.ENGLISH) : null;
+                         ? qname.localpart.toUpperCase() : null;
         String rawname = qname.rawname != null
-                       ? qname.rawname.toUpperCase(Locale.ENGLISH) : null;
+                       ? qname.rawname.toUpperCase() : null;
         String uri = qname.uri;
         fQName.setValues(prefix, localpart, rawname, uri);
         return fQName;

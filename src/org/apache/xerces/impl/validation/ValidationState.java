@@ -18,7 +18,6 @@
 package org.apache.xerces.impl.validation;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 
@@ -88,23 +87,18 @@ public class ValidationState implements ValidationContext {
 
     /**
      * return null if all IDREF values have a corresponding ID value;
-     * otherwise return an iterator for all the IDREF values without
-     * a matching ID value.
+     * otherwise return the first IDREF value without a matching ID value.
      */
-    public Iterator checkIDRefID() {
-        HashSet missingIDs = null;
+    public String checkIDRefID () {
         Iterator iter = fIdRefTable.keySet().iterator();
         String key;
         while (iter.hasNext()) {
             key = (String) iter.next();
             if (!fIdTable.containsKey(key)) {
-                if (missingIDs == null) {
-                    missingIDs = new HashSet();
-                }
-                missingIDs.add(key);
+                  return key;
             }
         }
-        return (missingIDs != null) ? missingIDs.iterator() : null;
+        return null;
     }
 
     public void reset () {

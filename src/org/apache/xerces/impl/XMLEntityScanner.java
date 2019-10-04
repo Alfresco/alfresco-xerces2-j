@@ -309,7 +309,10 @@ public class XMLEntityScanner implements XMLLocator {
                 int length = fCurrentEntity.position - offset;
                 if (length == fCurrentEntity.ch.length) {
                     // bad luck we have to resize our buffer
-                    resizeBuffer(offset, length);
+                    char[] tmp = new char[fCurrentEntity.ch.length << 1];
+                    System.arraycopy(fCurrentEntity.ch, offset,
+                                     tmp, 0, length);
+                    fCurrentEntity.ch = tmp;
                 }
                 else {
                     System.arraycopy(fCurrentEntity.ch, offset,
@@ -388,7 +391,10 @@ public class XMLEntityScanner implements XMLLocator {
                     int length = fCurrentEntity.position - offset;
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
-                        resizeBuffer(offset, length);
+                        char[] tmp = new char[fCurrentEntity.ch.length << 1];
+                        System.arraycopy(fCurrentEntity.ch, offset,
+                                         tmp, 0, length);
+                        fCurrentEntity.ch = tmp;
                     }
                     else {
                         System.arraycopy(fCurrentEntity.ch, offset,
@@ -468,7 +474,10 @@ public class XMLEntityScanner implements XMLLocator {
                     int length = fCurrentEntity.position - offset;
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
-                        resizeBuffer(offset, length);
+                        char[] tmp = new char[fCurrentEntity.ch.length << 1];
+                        System.arraycopy(fCurrentEntity.ch, offset,
+                                         tmp, 0, length);
+                        fCurrentEntity.ch = tmp;
                     }
                     else {
                         System.arraycopy(fCurrentEntity.ch, offset,
@@ -565,7 +574,10 @@ public class XMLEntityScanner implements XMLLocator {
                     int length = fCurrentEntity.position - offset;
                     if (length == fCurrentEntity.ch.length) {
                         // bad luck we have to resize our buffer
-                        resizeBuffer(offset, length);
+                        char[] tmp = new char[fCurrentEntity.ch.length << 1];
+                        System.arraycopy(fCurrentEntity.ch, offset,
+                                         tmp, 0, length);
+                        fCurrentEntity.ch = tmp;
                     }
                     else {
                         System.arraycopy(fCurrentEntity.ch, offset,
@@ -1777,18 +1789,6 @@ public class XMLEntityScanner implements XMLLocator {
         return entityChanged;
 
     } // load(int, boolean):boolean
-    
-    /**
-     * This method is invoked to increase the size of the current entity's
-     * buffer if an XML name being scanned is too large to fit within
-     * the buffer at its current size. 
-     */
-    final void resizeBuffer(int offset, int length) {
-        char[] tmp = new char[fCurrentEntity.ch.length << 1];
-        System.arraycopy(fCurrentEntity.ch, offset,
-                         tmp, 0, length);
-        fCurrentEntity.ch = tmp;
-    } // resizeBuffer(int, int)
 
 } // class XMLEntityScanner
 

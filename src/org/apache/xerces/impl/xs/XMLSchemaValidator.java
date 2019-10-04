@@ -51,7 +51,6 @@ import org.apache.xerces.impl.xs.identity.XPathMatcher;
 import org.apache.xerces.impl.xs.models.CMBuilder;
 import org.apache.xerces.impl.xs.models.CMNodeFactory;
 import org.apache.xerces.impl.xs.models.XSCMValidator;
-import org.apache.xerces.impl.xs.util.XS10TypeHelper;
 import org.apache.xerces.util.AugmentationsImpl;
 import org.apache.xerces.util.IntStack;
 import org.apache.xerces.util.SymbolTable;
@@ -1954,7 +1953,6 @@ public class XMLSchemaValidator
                     && (next = fCurrentCM.whatCanGoHere(fCurrCMState)).size() > 0) {
                     String expected = expectedStr(next);
                     final int[] occurenceInfo = fCurrentCM.occurenceInfo(fCurrCMState);
-                    String elemExpandedQname = (element.uri != null) ? "{"+'"'+element.uri+'"'+":"+element.localpart+"}" : element.localpart;
                     if (occurenceInfo != null) {
                         final int minOccurs = occurenceInfo[0];
                         final int maxOccurs = occurenceInfo[1];
@@ -1977,11 +1975,11 @@ public class XMLSchemaValidator
                                     expected, Integer.toString(maxOccurs) });
                         }
                         else {
-                            reportSchemaError("cvc-complex-type.2.4.a", new Object[] { elemExpandedQname, expected });
+                            reportSchemaError("cvc-complex-type.2.4.a", new Object[] { element.rawname, expected });
                         }
                     }
                     else {
-                        reportSchemaError("cvc-complex-type.2.4.a", new Object[] { elemExpandedQname, expected });
+                        reportSchemaError("cvc-complex-type.2.4.a", new Object[] { element.rawname, expected });
                     }
                 }
                 else {
@@ -1991,7 +1989,7 @@ public class XMLSchemaValidator
                         final int count = occurenceInfo[2];
                         // Check if this is a violation of maxOccurs
                         if (count >= maxOccurs && maxOccurs != SchemaSymbols.OCCURRENCE_UNBOUNDED) {
-                            reportSchemaError("cvc-complex-type.2.4.f", new Object[] { fCurrentCM.getTermName(occurenceInfo[3]), Integer.toString(maxOccurs) });
+                            reportSchemaError("cvc-complex-type.2.4.f", new Object[] { element.rawname, Integer.toString(maxOccurs) });
                         }
                         else {
                             reportSchemaError("cvc-complex-type.2.4.d", new Object[] { element.rawname });
@@ -2440,9 +2438,7 @@ public class XMLSchemaValidator
                             && id.getCategory() == IdentityConstraint.IC_KEYREF) {
                         ValueStoreBase values =
                             fValueStoreCache.getValueStoreFor(id, selMatcher.getInitialDepth());
-                        // nothing to do if nothing matched, or if not all
-                        // fields are present.
-                        if (values != null && values.fValuesCount == values.fFieldCount)
+                        if (values != null) // nothing to do if nothing matched!
                             values.endDocumentFragment();
                     }
                 }
@@ -2461,12 +2457,10 @@ public class XMLSchemaValidator
         // have we reached the end tag of the validation root?
         if (fElementDepth == 0) {
             // 7 If the element information item is the validation root, it must be valid per Validation Root Valid (ID/IDREF) (3.3.4).
-            Iterator invIdRefs = fValidationState.checkIDRefID();
+            String invIdRef = fValidationState.checkIDRefID();
             fValidationState.resetIDTables();
-            if (invIdRefs != null) {
-                while (invIdRefs.hasNext()) {
-                    reportSchemaError("cvc-id.1", new Object[] { invIdRefs.next() });
-                }    
+            if (invIdRef != null) {
+                reportSchemaError("cvc-id.1", new Object[] { invIdRef });
             }
             // check extra schema constraints
             if (fFullChecking && !fUseGrammarPoolOnly) {
@@ -2851,7 +2845,7 @@ public class XMLSchemaValidator
             if (!XSConstraints.checkTypeDerivationOk(type, fCurrentType, block)) {
                 reportSchemaError(
                         "cvc-elt.4.3",
-                        new Object[] { element.rawname, xsiType, XS10TypeHelper.getSchemaTypeName(fCurrentType)});
+                        new Object[] { element.rawname, xsiType, fCurrentType.getName()});
             }
         }
 
@@ -3521,9 +3515,6 @@ public class XMLSchemaValidator
     
     void processRootTypeQName(final javax.xml.namespace.QName rootTypeQName) {
         String rootTypeNamespace = rootTypeQName.getNamespaceURI();
-        // Add namespace to symbol table, to make sure it's interned.
-        // This namespace may be later compared with other values using ==.
-        rootTypeNamespace = fSymbolTable.addSymbol(rootTypeNamespace);
         if (rootTypeNamespace != null && rootTypeNamespace.equals(XMLConstants.NULL_NS_URI)) {
             rootTypeNamespace = null;
         }
@@ -3547,9 +3538,6 @@ public class XMLSchemaValidator
     
     void processRootElementDeclQName(final javax.xml.namespace.QName rootElementDeclQName, final QName element) {
         String rootElementDeclNamespace = rootElementDeclQName.getNamespaceURI();
-        // Add namespace to symbol table, to make sure it's interned.
-        // This namespace may be later compared with other values using ==.
-        rootElementDeclNamespace = fSymbolTable.addSymbol(rootElementDeclNamespace);
         if (rootElementDeclNamespace != null && rootElementDeclNamespace.equals(XMLConstants.NULL_NS_URI)) {
             rootElementDeclNamespace = null;
         }

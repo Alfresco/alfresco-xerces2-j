@@ -415,7 +415,7 @@ class XSDElementTraverser extends XSDAbstractTraverser {
                         fSchemaHandler.checkForDuplicateNames(
                                 (schemaDoc.fTargetNamespace == null) ? ","+DOMUtil.getAttrValue(child, SchemaSymbols.ATT_NAME)
                                         : schemaDoc.fTargetNamespace+","+ DOMUtil.getAttrValue(child, SchemaSymbols.ATT_NAME),
-                                        XSDHandler.ATTRIBUTE_TYPE, fSchemaHandler.getIDRegistry(), fSchemaHandler.getIDRegistry_sub(),
+                                        fSchemaHandler.ATTRIBUTE_TYPE, fSchemaHandler.getIDRegistry(), fSchemaHandler.getIDRegistry_sub(),
                                         child, schemaDoc);
                     }
                 } else if (childName.equals(SchemaSymbols.ELT_KEYREF)) {

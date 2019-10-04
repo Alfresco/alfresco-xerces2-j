@@ -18,12 +18,10 @@
 package xni;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Stack;
+import java.util.Vector;
 
 import org.apache.xerces.dom.DocumentImpl;
 import org.apache.xerces.impl.Constants;
@@ -72,7 +70,6 @@ import org.apache.xerces.xs.XSObjectList;
 import org.apache.xerces.xs.XSParticle;
 import org.apache.xerces.xs.XSSimpleTypeDefinition;
 import org.apache.xerces.xs.XSTypeDefinition;
-import org.apache.xerces.xs.XSValue;
 import org.apache.xerces.xs.XSWildcard;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -147,10 +144,10 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
     protected int fIndent;
 
     /** The map used to store IDs for types and elements */
-    protected Map fIDMap;
+    protected HashMap fIDMap;
 
     /** A list of ids for defined XSObjects */
-    protected List fDefined;
+    protected Vector fDefined;
 
     private char[] fIndentChars =
         { '\t', '\t', '\t', '\t', '\t', '\t', '\t', '\t' };
@@ -182,7 +179,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
 
         fAnonNum = 1000;
         fIDMap = new HashMap();
-        fDefined = new ArrayList();
+        fDefined = new Vector();
         fIndent = 0;
         fPSVINamespaceContext = new NamespaceSupport();
     } // reset(XMLComponentManager)
@@ -390,7 +387,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
             fPSVINamespaceContext,
             null);
 
-        List attributes = new ArrayList();
+        Vector attributes = new Vector();
         attributes.add("xmlns:xsi");
         attributes.add("http://www.w3.org/2001/XMLSchema-instance");
         attributes.add(XMLSymbols.fCDATASymbol);
@@ -907,7 +904,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
             processPSVISchemaErrorCode(elemPSVI.getErrorCodes());
             sendElementEvent(
                 "psv:schemaNormalizedValue",
-                getSchemaNormalizedValue(elemPSVI));
+                elemPSVI.getSchemaNormalizedValue());
             sendElementEvent(
                 "psv:schemaSpecified",
                 elemPSVI.getIsSchemaSpecified() ? "schema" : "infoset");
@@ -959,7 +956,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
             processPSVISchemaErrorCode(attrPSVI.getErrorCodes());
             sendElementEvent(
                 "psv:schemaNormalizedValue",
-                getSchemaNormalizedValue(attrPSVI));
+                attrPSVI.getSchemaNormalizedValue());
             sendElementEvent(
                 "psv:schemaSpecified",
                 attrPSVI.getIsSchemaSpecified() ? "schema" : "infoset");
@@ -1320,7 +1317,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
                 sendIndentedElement("psv:attributeUse");
                 sendElementEvent("psv:required", String.valueOf(use.getRequired()));
                 processPSVIAttributeDeclarationOrRef(use.getAttrDeclaration());
-                processPSVIValueConstraint(use.getConstraintType(), getConstraintValue(use));
+                processPSVIValueConstraint(use.getConstraintType(), use.getConstraintValue());
                 sendUnIndentedElement("psv:attributeUse");
             }
             sendUnIndentedElement("psv:attributeUses");
@@ -1535,7 +1532,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
             "psv:typeDefinition",
             elem.getTypeDefinition());
         processPSVIScope("psv:scope", elem.getEnclosingCTDefinition(), elem.getScope());
-        processPSVIValueConstraint(elem.getConstraintType(), getConstraintValue(elem));
+        processPSVIValueConstraint(elem.getConstraintType(), elem.getConstraintValue());
         sendElementEvent("psv:nillable", String.valueOf(elem.getNillable()));
         processPSVIIdentityConstraintDefinitions(elem.getIdentityConstraints());
         processPSVISubstitutionGroupAffiliation(elem);
@@ -1561,7 +1558,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
             "psv:typeDefinition",
             attr.getTypeDefinition());
         processPSVIScope("psv:scope", attr.getEnclosingCTDefinition(), attr.getScope());
-        processPSVIValueConstraint(attr.getConstraintType(), getConstraintValue(attr));
+        processPSVIValueConstraint(attr.getConstraintType(), attr.getConstraintValue());
         processPSVIAnnotation(attr.getAnnotation());
         sendUnIndentedElement("psv:attributeDeclaration");
     }
@@ -1725,10 +1722,10 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
 
     private void processPSVIElementRef(
         String elementName,
-        List attributes,
+        Vector attributes,
         XSObject obj) {
         if (attributes == null) {
-            attributes = new ArrayList();
+            attributes = new Vector();
         }
         String ref = this.getID(obj);
         if (ref != null) {
@@ -1756,7 +1753,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
     private void processPSVIAttributeDeclarationRef(XSAttributeDeclaration att) {
         if (att == null)
             return;
-        List attributes = new ArrayList();
+        Vector attributes = new Vector();
         attributes.add("name");
         attributes.add(att.getName());
         attributes.add(XMLSymbols.fCDATASymbol);
@@ -1878,7 +1875,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
         this.sendEmptyElementEvent(tagname, null);
     } //sendEmptyElementEvent
 
-    private void sendEmptyElementEvent(String tagname, List attributes) {
+    private void sendEmptyElementEvent(String tagname, Vector attributes) {
         this.sendIndent();
         fDocumentHandler.emptyElement(
             createQName(tagname),
@@ -1894,7 +1891,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
      *
      * @throws IOEXception
      */
-    private void sendStartElementEvent(String tagname, List attributes) {
+    private void sendStartElementEvent(String tagname, Vector attributes) {
         fDocumentHandler.startElement(
             createQName(tagname),
             createAttributes(attributes),
@@ -1924,7 +1921,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
         this.sendIndentedElement(tagName, null);
     } //sendIndentedElement
 
-    private void sendIndentedElement(String tagName, List attributes) {
+    private void sendIndentedElement(String tagName, Vector attributes) {
         this.sendIndent();
         this.sendStartElementEvent(tagName, attributes);
         this.sendNewLine();
@@ -1969,7 +1966,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
 
     private void sendElementEvent(
         String elementName,
-        List attributes,
+        Vector attributes,
         String elementValue) {
         XMLString text =
             elementValue == null
@@ -1983,11 +1980,11 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
 
     private void sendElementEvent(
         String elementName,
-        List attributes,
+        Vector attributes,
         XMLString elementValue) {
         if (elementValue == null || elementValue.length == 0) {
             if (attributes == null) {
-                attributes = new ArrayList();
+                attributes = new Vector();
             }
             attributes.add("xsi:nil");
             attributes.add("true");
@@ -2008,7 +2005,7 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
         // since this method is called everytime we define something with an ID,
         // may as well mark the ID as defined here
         fDefined.add(id);
-        List attributes = new ArrayList();
+        Vector attributes = new Vector();
         attributes.add("id");
         attributes.add(id);
         attributes.add(XMLSymbols.fIDSymbol);
@@ -2045,13 +2042,13 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
         return new QName(prefix, localpart, rawname, uri);
     }
 
-    private XMLAttributes createAttributes(List atts) {
+    private XMLAttributes createAttributes(Vector atts) {
         XMLAttributes attributes = new XMLAttributesImpl();
         if (atts != null) {
             for (int i = 0; i < atts.size(); i += 3) {
-                String rawname = (String)atts.get(i);
-                String value = (String)atts.get(i + 1);
-                String type = (String)atts.get(i + 2);
+                String rawname = (String)atts.elementAt(i);
+                String value = (String)atts.elementAt(i + 1);
+                String type = (String)atts.elementAt(i + 2);
                 attributes.addAttribute(createQName(rawname), type, value);
             }
         }
@@ -2358,29 +2355,8 @@ public class PSVIWriter implements XMLComponent, XMLDocumentFilter {
             _elementState.push(new ElementState(false));
         }
     } //checkForChildren
-    
-    private String getConstraintValue(XSElementDeclaration elemDecl) {
-        return getConstraintValue(elemDecl.getValueConstraintValue());
-    } // getConstraintValue(XSElementDeclaration)
-    
-    private String getConstraintValue(XSAttributeDeclaration attrDecl) {
-        return getConstraintValue(attrDecl.getValueConstraintValue());
-    } // getConstraintValue(XSAttributeDeclaration)
-    
-    private String getConstraintValue(XSAttributeUse attrUse) {
-        return getConstraintValue(attrUse.getValueConstraintValue());
-    } // getConstraintValue(XSAttributeUse)
-    
-    private String getConstraintValue(XSValue vcValue) {
-        return (vcValue != null) ? vcValue.getNormalizedValue() : null;
-    } // getConstraintValue(XSValue)
-    
-    private String getSchemaNormalizedValue(ItemPSVI itemPSVI) {
-        XSValue schemaValue = itemPSVI.getSchemaValue();
-        return (schemaValue != null) ? schemaValue.getNormalizedValue() : null;
-    } // getSchemaNormalizedValue(ItemPSVI)
 
-    static final class ElementState {
+    class ElementState {
         public boolean isEmpty;
         XMLAttributes fAttributes;
 

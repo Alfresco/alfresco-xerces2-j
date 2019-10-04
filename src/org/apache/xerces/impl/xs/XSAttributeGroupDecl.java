@@ -358,13 +358,8 @@ public class XSAttributeGroupDecl implements XSAttributeGroupDefinition {
      * {attribute uses} A set of attribute uses.
      */
     public XSObjectList getAttributeUses() {
-        if (fAttrUses == null) {
-            if (fAttrUseNum > 0) {
-                fAttrUses = new XSObjectListImpl(fAttributeUses, fAttrUseNum);
-            }
-            else {
-                fAttrUses = XSObjectListImpl.EMPTY_LIST;
-            }
+        if (fAttrUses == null){
+            fAttrUses = new XSObjectListImpl(fAttributeUses, fAttrUseNum);
         }
         return fAttrUses;
     }

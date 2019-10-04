@@ -28,11 +28,11 @@ import java.net.Socket;
 import java.util.Random;
 
 import org.apache.xerces.parsers.SAXParser;
-import org.xml.sax.Attributes;
+import org.xml.sax.AttributeList;
+import org.xml.sax.HandlerBase;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import socket.io.WrappedInputStream;
 import socket.io.WrappedOutputStream;
@@ -245,7 +245,7 @@ public class KeepSocketOpen {
      * @author Andy Clark, IBM
      */
     public static final class Client
-        extends DefaultHandler
+        extends HandlerBase
         implements Runnable {
 
         //
@@ -295,7 +295,7 @@ public class KeepSocketOpen {
         public Client(String address, int port) throws IOException {
             this(address, port, false);
             fParser = new SAXParser();
-            fParser.setContentHandler(this);
+            fParser.setDocumentHandler(this);
             fParser.setErrorHandler(this);
         }
 
@@ -358,7 +358,7 @@ public class KeepSocketOpen {
         } // run()
 
         //
-        // ContentHandler methods
+        // DocumentHandler methods
         //
 
         /** Start document. */
@@ -371,18 +371,18 @@ public class KeepSocketOpen {
         } // startDocument()
 
         /** Start element. */
-        public void startElement(String uri, String localName, String qName, Attributes atts) {
+        public void startElement(String name, AttributeList attrs) {
             fElementCount++;
-            fAttributeCount += atts != null ? atts.getLength() : 0;
-        } // startElement(String,String,String,Attributes)
+            fAttributeCount += attrs != null ? attrs.getLength() : 0;
+        } // startElement(String,AttributeList)
 
         /** Ignorable whitespace. */
-        public void ignorableWhitespace(char[] ch, int start, int length) {
+        public void ignorableWhitespace(char[] ch, int offset, int length) {
             fIgnorableWhitespaceCount += length;
         } // ignorableWhitespace(char[],int,int)
 
         /** Characters. */
-        public void characters(char[] ch, int start, int length) {
+        public void characters(char[] ch, int offset, int length) {
             fCharactersCount += length;
         } // characters(char[],int,int)
 
