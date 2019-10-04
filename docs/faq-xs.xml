@@ -86,7 +86,9 @@ v.validate(instanceDocument);
   	   <jump href="http://wiki.eclipse.org/PsychoPathXPathProcessor">Eclipse/PsychoPath XPath 2.0 engine</jump>.
   	   </p>
   	   <p>
+
   	   Xerces-J bundles a PsychoPath XPath 2.0 jar (which requires JDK 1.4 or later).
+
   	   </p>
   	   <note>
   	   Users should be aware that more recent releases of the PsychoPath
@@ -98,6 +100,7 @@ v.validate(instanceDocument);
   	   </note>
   	</a>
   </faq>
+
   <faq title="Using Entities and CDATA Sections">
     <q>How does the XML Schema processor treat entities and CDATA sections?</q>
     <a> 
